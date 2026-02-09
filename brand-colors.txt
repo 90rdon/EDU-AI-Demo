@@ -1,0 +1,40 @@
+LEANDER ISD / CLEARPATH EDU BRAND COLORS
+==========================================
+
+PRIMARY BRAND COLORS (Blue Palette)
+----------------------------------
+vt-blue:      #004f8a  (Main Brand Identity / Headers)
+vt-darkBlue:  #003a65  (Navigation Backgrounds / Deep UI)
+vt-lightBlue: #0069b4  (Active Links / Secondary CTA)
+
+ACCENT COLORS (Gold Palette)
+---------------------------
+vt-gold:      #fdb813  (Primary Accent / Icons / Sparkles)
+vt-darkGold:  #e4a611  (Gold Hover states / Borders)
+
+UI & SYSTEM COLORS
+-----------------
+vt-grey:       #f2f2f2  (Input backgrounds / Light containers)
+vt-textGrey:   #444444  (Standard body text)
+vt-borderGrey: #cccccc  (Component borders)
+Body Background: #f3f4f6 (Cool Grey background)
+
+TAILWIND CONFIGURATION OBJECT
+----------------------------
+colors: {
+  vt: {
+    blue: '#004f8a',
+    darkBlue: '#003a65',
+    lightBlue: '#0069b4',
+    gold: '#fdb813',
+    darkGold: '#e4a611',
+    grey: '#f2f2f2',
+    textGrey: '#444444',
+    borderGrey: '#cccccc',
+  }
+}
+
+FAVICON LOGO INFO
+----------------
+Background: #004f8a (Blue)
+Cap/Details: #fdb813 (Gold)
