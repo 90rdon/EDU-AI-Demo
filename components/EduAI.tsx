@@ -3,7 +3,7 @@ import { GoogleGenAI } from '@google/genai';
 import { Send, Sparkles, X, Loader2, AlertCircle, Download, Table as TableIcon } from 'lucide-react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-interface EdAssistAIProps {
+interface EduAIProps {
   contextData: string;
   isOpen: boolean;
   onClose: () => void;
@@ -51,7 +51,7 @@ const uiContent = {
   }
 };
 
-const EdAssistAI: React.FC<EdAssistAIProps> = ({ contextData, isOpen, onClose, initialPrompt, role, language = 'en' }) => {
+const EduAI: React.FC<EduAIProps> = ({ contextData, isOpen, onClose, initialPrompt, role, language = 'en' }) => {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<{ role: 'user' | 'model'; text: string }[]>([]);
   const [loading, setLoading] = useState(false);
@@ -93,13 +93,10 @@ const EdAssistAI: React.FC<EdAssistAIProps> = ({ contextData, isOpen, onClose, i
 
     let apiKey: string | undefined;
     try {
-      // @ts-ignore
-      if (typeof process !== 'undefined' && process.env) {
-        // @ts-ignore
-        apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
-      }
+      // @ts-ignore - Replacements handled by vite.config.ts define
+      apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
     } catch (e) {
-      console.warn("Could not access process.env");
+      console.warn("Could not access API key variables");
     }
 
     if (!apiKey) {
@@ -162,7 +159,7 @@ const EdAssistAI: React.FC<EdAssistAIProps> = ({ contextData, isOpen, onClose, i
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "edassist_groups.csv");
+    link.setAttribute("download", "edu_ai_groups.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -461,4 +458,4 @@ const EdAssistAI: React.FC<EdAssistAIProps> = ({ contextData, isOpen, onClose, i
   );
 };
 
-export default EdAssistAI;
+export default EduAI;

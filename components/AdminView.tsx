@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DISTRICT_ANALYTICS, TEKS_COHORT_DATA } from '../constants';
 import { DollarSign, GraduationCap, CheckCircle2, FileText, Search, LayoutGrid, Sparkles, Settings, X, Wand2, Plus, ArrowRight, BarChart2 } from 'lucide-react';
-import EdAssistAI from './EdAssistAI';
+import EduAI from './EduAI';
 import { ViewProps } from '../types';
 
 // Icons for the Report Grid (EdData style)
@@ -30,19 +30,19 @@ interface ReportTile {
 }
 
 const INITIAL_REPORTS: ReportTile[] = [
-    { 
-        id: 'r1', 
-        title: 'ESSER Funding', 
-        type: 'finance', 
-        category: 'Public', 
+    {
+        id: 'r1',
+        title: 'ESSER Funding',
+        type: 'finance',
+        category: 'Public',
         description: 'Track federal relief fund allocation and expenditure timelines across district programs.',
         prompt: 'Visualize the ESSER spending breakdown by category as a pie chart.'
     },
-    { 
-        id: 'r2', 
-        title: 'Digital Readiness', 
-        type: 'school', 
-        category: 'School', 
+    {
+        id: 'r2',
+        title: 'Digital Readiness',
+        type: 'school',
+        category: 'School',
         description: 'Device-to-student ratios, connectivity gaps, and software license utilization.',
         prompt: 'Show me a bar chart of Digital Readiness metrics including Device Access and Connectivity.'
     },
@@ -54,72 +54,72 @@ const INITIAL_REPORTS: ReportTile[] = [
         description: 'Longitudinal year-to-year proficiency tracking for specific cohorts across TEKS standards.',
         prompt: '' // Prompt is generated dynamically via modal
     },
-    { 
-        id: 'r3', 
-        title: 'HS Graduate Outcomes', 
-        type: 'agency', 
-        category: 'Agency', 
+    {
+        id: 'r3',
+        title: 'HS Graduate Outcomes',
+        type: 'agency',
+        category: 'Agency',
         description: 'Employment and college enrollment statistics for recent graduating cohorts.',
         prompt: 'Create a bar chart showing High School Graduate Outcomes by category (College, Career, etc).'
     },
-    { 
-        id: 'r4', 
-        title: 'Teacher Compensation', 
-        type: 'finance', 
-        category: 'Financial', 
+    {
+        id: 'r4',
+        title: 'Teacher Compensation',
+        type: 'finance',
+        category: 'Financial',
         description: 'Analysis of salary scales, retention bonuses, and total cost of employment.',
         prompt: 'Visualize teacher compensation growth over years of experience as a line chart.'
     },
-    { 
-        id: 'r5', 
-        title: 'Student Level Outcomes', 
-        type: 'security', 
-        category: 'IT Security', 
+    {
+        id: 'r5',
+        title: 'Student Level Outcomes',
+        type: 'security',
+        category: 'IT Security',
         description: 'Secure, row-level access to standardized test scores and growth metrics (RBAC Restricted).',
         prompt: 'Analyze student level outcomes and flag any security concerns with data access.'
     }
 ];
 
 const AdminView: React.FC<ViewProps> = ({ isAiOpen, setIsAiOpen }) => {
-  const [aiPrompt, setAiPrompt] = useState<string | undefined>(undefined);
-  const [reportTiles, setReportTiles] = useState<ReportTile[]>(INITIAL_REPORTS);
-  
-  // Configure Modal State (Generic)
-  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
-  const [configInput, setConfigInput] = useState('');
-  const [verificationStep, setVerificationStep] = useState(false);
-  const [pendingReport, setPendingReport] = useState<ReportTile | null>(null);
+    const [aiPrompt, setAiPrompt] = useState<string | undefined>(undefined);
+    const [reportTiles, setReportTiles] = useState<ReportTile[]>(INITIAL_REPORTS);
 
-  // STAAR Modal State
-  const [showStaarModal, setShowStaarModal] = useState(false);
-  const [selectedStaarGrade, setSelectedStaarGrade] = useState('5th Grade');
-  const [selectedStaarSubject, setSelectedStaarSubject] = useState('Mathematics');
+    // Configure Modal State (Generic)
+    const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+    const [configInput, setConfigInput] = useState('');
+    const [verificationStep, setVerificationStep] = useState(false);
+    const [pendingReport, setPendingReport] = useState<ReportTile | null>(null);
 
-  // Hint States
-  const [showTileHint, setShowTileHint] = useState(false);
-  const [hasClickedTile, setHasClickedTile] = useState(false);
+    // STAAR Modal State
+    const [showStaarModal, setShowStaarModal] = useState(false);
+    const [selectedStaarGrade, setSelectedStaarGrade] = useState('5th Grade');
+    const [selectedStaarSubject, setSelectedStaarSubject] = useState('Mathematics');
 
-  const [showCreateHint, setShowCreateHint] = useState(false);
-  const [hasClickedCreate, setHasClickedCreate] = useState(false);
+    // Hint States
+    const [showTileHint, setShowTileHint] = useState(false);
+    const [hasClickedTile, setHasClickedTile] = useState(false);
 
-  // Trigger Hints
-  useEffect(() => {
-    if (hasClickedTile) return;
-    const timer = setTimeout(() => setShowTileHint(true), 1500);
-    return () => clearTimeout(timer);
-  }, [hasClickedTile]);
+    const [showCreateHint, setShowCreateHint] = useState(false);
+    const [hasClickedCreate, setHasClickedCreate] = useState(false);
 
-  useEffect(() => {
-    if (hasClickedCreate) return;
-    const timer = setTimeout(() => setShowCreateHint(true), 3000); // Stagger slightly after first hint
-    return () => clearTimeout(timer);
-  }, [hasClickedCreate]);
+    // Trigger Hints
+    useEffect(() => {
+        if (hasClickedTile) return;
+        const timer = setTimeout(() => setShowTileHint(true), 1500);
+        return () => clearTimeout(timer);
+    }, [hasClickedTile]);
 
-  // Prepare attendance data for context
-  const attendanceData = DISTRICT_ANALYTICS.map(d => ({ name: d.name, value: d.attendance }));
+    useEffect(() => {
+        if (hasClickedCreate) return;
+        const timer = setTimeout(() => setShowCreateHint(true), 3000); // Stagger slightly after first hint
+        return () => clearTimeout(timer);
+    }, [hasClickedCreate]);
 
-  // District Context for AI - Updated with specific data for charts
-  const districtContext = `
+    // Prepare attendance data for context
+    const attendanceData = DISTRICT_ANALYTICS.map(d => ({ name: d.name, value: d.attendance }));
+
+    // District Context for AI - Updated with specific data for charts
+    const districtContext = `
     District: Lone Star Unified School District.
     Enrollment: 42,500.
     Strategic Goals: Improve Digital Readiness, Optimize Federal Funding (ESSER), Increase Graduate Employment.
@@ -135,345 +135,345 @@ const AdminView: React.FC<ViewProps> = ({ isAiOpen, setIsAiOpen }) => {
     ${JSON.stringify(TEKS_COHORT_DATA)}
   `;
 
-  const handleTileClick = (report: ReportTile) => {
-      setHasClickedTile(true);
-      setShowTileHint(false);
-      
-      if (report.id === 'staar-cohort') {
-          setShowStaarModal(true);
-      } else {
-          setAiPrompt(report.prompt);
-          setIsAiOpen(true);
-      }
-  };
+    const handleTileClick = (report: ReportTile) => {
+        setHasClickedTile(true);
+        setShowTileHint(false);
 
-  const handleStaarGenerate = () => {
-      const prompt = `Generate a multi-line chart comparing "Classroom", "NWEA", and "STAAR" proficiency percentages for the ${selectedStaarSubject} cohort (${selectedStaarGrade}) over the last 3 years. Ensure "Classroom" data is the highest line trend.`;
-      setShowStaarModal(false);
-      setAiPrompt(prompt);
-      setIsAiOpen(true);
-  };
-
-  const handleVerifyReport = () => {
-    if (!configInput.trim()) return;
-    
-    // Simulate AI parsing the natural language to determine report details
-    let suggestedTitle = "Custom Analysis Report";
-    
-    if (configInput.toLowerCase().includes("attendance")) suggestedTitle = "Attendance Trends";
-    else if (configInput.toLowerCase().includes("score")) suggestedTitle = "Assessment Scores";
-    else if (configInput.toLowerCase().includes("budget")) suggestedTitle = "Budget Analysis";
-    
-    const newReport: ReportTile = {
-        id: `custom-${Date.now()}`,
-        title: suggestedTitle,
-        type: 'custom',
-        category: 'Custom Report',
-        description: `Generated from request: "${configInput.substring(0, 50)}${configInput.length > 50 ? '...' : ''}"`,
-        prompt: configInput // Store the full user prompt to send to AI later
+        if (report.id === 'staar-cohort') {
+            setShowStaarModal(true);
+        } else {
+            setAiPrompt(report.prompt);
+            setIsAiOpen(true);
+        }
     };
 
-    setPendingReport(newReport);
-    setVerificationStep(true);
-  };
+    const handleStaarGenerate = () => {
+        const prompt = `Generate a multi-line chart comparing "Classroom", "NWEA", and "STAAR" proficiency percentages for the ${selectedStaarSubject} cohort (${selectedStaarGrade}) over the last 3 years. Ensure "Classroom" data is the highest line trend.`;
+        setShowStaarModal(false);
+        setAiPrompt(prompt);
+        setIsAiOpen(true);
+    };
 
-  const handleApproveReport = () => {
-      if (pendingReport) {
-          setReportTiles([...reportTiles, pendingReport]);
-          setVerificationStep(false);
-          setPendingReport(null);
-          setConfigInput('');
-          setIsConfigModalOpen(false);
-      }
-  };
+    const handleVerifyReport = () => {
+        if (!configInput.trim()) return;
 
-  const handleCloseModal = () => {
-      setIsConfigModalOpen(false);
-      setVerificationStep(false);
-      setPendingReport(null);
-      setConfigInput('');
-  };
+        // Simulate AI parsing the natural language to determine report details
+        let suggestedTitle = "Custom Analysis Report";
 
-  return (
-    <div className="min-h-screen bg-gray-50 font-sans pb-24 relative">
-      
-      {/* EdAssist AI Sidebar */}
-      <EdAssistAI isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} contextData={districtContext} initialPrompt={aiPrompt} role="District Administrator" />
+        if (configInput.toLowerCase().includes("attendance")) suggestedTitle = "Attendance Trends";
+        else if (configInput.toLowerCase().includes("score")) suggestedTitle = "Assessment Scores";
+        else if (configInput.toLowerCase().includes("budget")) suggestedTitle = "Budget Analysis";
 
-      {/* STAAR Config Modal */}
-      {showStaarModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-fadeIn">
-            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden flex flex-col">
-                <div className="bg-vt-blue p-4 flex justify-between items-center text-white">
-                    <div className="flex items-center gap-2">
-                        <BarChart2 size={20} />
-                        <h3 className="font-bold text-lg">Configure Cohort Analysis</h3>
-                    </div>
-                    <button onClick={() => setShowStaarModal(false)} className="hover:bg-vt-darkBlue p-1 rounded-full transition">
-                        <X size={20} />
-                    </button>
-                </div>
-                <div className="p-6 space-y-6">
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1">Target Cohort (Current Grade)</label>
-                            <select 
-                                value={selectedStaarGrade}
-                                onChange={(e) => setSelectedStaarGrade(e.target.value)}
-                                className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-vt-blue focus:border-vt-blue block p-2.5"
-                            >
-                                <option value="5th Grade">5th Grade (Class of 2032)</option>
-                                <option value="7th Grade">7th Grade (Class of 2030)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1">Standard / Subject</label>
-                            <select 
-                                value={selectedStaarSubject}
-                                onChange={(e) => setSelectedStaarSubject(e.target.value)}
-                                className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-vt-blue focus:border-vt-blue block p-2.5"
-                            >
-                                <option value="Mathematics">Mathematics</option>
-                                <option value="Reading Language Arts">Reading Language Arts</option>
-                                <option value="Science">Science (5th/8th Only)</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs text-blue-800">
-                        <p className="font-bold mb-1">Analysis Scope:</p>
-                        <p>This report will visualize longitudinal proficiency percentages comparing State (STAAR), District (NWEA), and Local (Classroom) assessment data over the last 3 years.</p>
-                    </div>
+        const newReport: ReportTile = {
+            id: `custom-${Date.now()}`,
+            title: suggestedTitle,
+            type: 'custom',
+            category: 'Custom Report',
+            description: `Generated from request: "${configInput.substring(0, 50)}${configInput.length > 50 ? '...' : ''}"`,
+            prompt: configInput // Store the full user prompt to send to AI later
+        };
 
-                    <button 
-                        onClick={handleStaarGenerate}
-                        className="w-full text-white bg-gradient-to-r from-vt-blue to-vt-lightBlue hover:from-vt-lightBlue hover:to-orange-600 font-bold rounded-lg text-sm px-5 py-3 text-center shadow-md transition-all flex justify-center items-center gap-2"
-                    >
-                        <Sparkles size={16} /> Generate Report with EDU AI
-                    </button>
-                </div>
-            </div>
-        </div>
-      )}
+        setPendingReport(newReport);
+        setVerificationStep(true);
+    };
 
-      {/* Configure Report Modal (Generic) */}
-      {isConfigModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-fadeIn">
-            <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col">
-                <div className="bg-vt-darkBlue p-4 flex justify-between items-center text-white">
-                    <div className="flex items-center gap-2">
-                        <Settings size={20} />
-                        <h3 className="font-bold text-lg">
-                            {verificationStep ? "Verify & Create Report" : "Configure Custom Report"}
-                        </h3>
-                    </div>
-                    <button onClick={handleCloseModal} className="hover:bg-white/20 p-1 rounded-full transition">
-                        <X size={20} />
-                    </button>
-                </div>
-                
-                <div className="p-6">
-                    {!verificationStep ? (
-                        <>
-                            <p className="text-gray-600 text-sm mb-4">
-                                Describe the data, filters, and visualization type you need. EDU AI will draft the configuration for you.
-                            </p>
-                            <textarea 
-                                value={configInput}
-                                onChange={(e) => setConfigInput(e.target.value)}
-                                placeholder="e.g., 'Create a bar chart showing student attendance trends broken down by high school campus for the last semester.'"
-                                className="w-full h-32 border border-vt-borderGrey rounded-xl p-3 text-sm focus:ring-2 focus:ring-vt-lightBlue focus:border-vt-blue outline-none resize-none mb-4"
-                            />
-                            <div className="flex justify-end gap-3">
-                                <button 
-                                    onClick={handleCloseModal}
-                                    className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg font-medium text-sm transition"
-                                >
-                                    Cancel
-                                </button>
-                                <button 
-                                    onClick={handleVerifyReport}
-                                    className="px-4 py-2 bg-gradient-to-r from-vt-blue to-vt-lightBlue text-white rounded-lg font-bold text-sm shadow-md flex items-center gap-2 hover:shadow-lg transition"
-                                >
-                                    <Wand2 size={16} /> Draft Configuration
-                                </button>
+    const handleApproveReport = () => {
+        if (pendingReport) {
+            setReportTiles([...reportTiles, pendingReport]);
+            setVerificationStep(false);
+            setPendingReport(null);
+            setConfigInput('');
+            setIsConfigModalOpen(false);
+        }
+    };
+
+    const handleCloseModal = () => {
+        setIsConfigModalOpen(false);
+        setVerificationStep(false);
+        setPendingReport(null);
+        setConfigInput('');
+    };
+
+    return (
+        <div className="min-h-screen bg-gray-50 font-sans pb-24 relative">
+
+            {/* EduAI Sidebar */}
+            <EduAI isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} contextData={districtContext} initialPrompt={aiPrompt} role="District Administrator" />
+
+            {/* STAAR Config Modal */}
+            {showStaarModal && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-fadeIn">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden flex flex-col">
+                        <div className="bg-vt-blue p-4 flex justify-between items-center text-white">
+                            <div className="flex items-center gap-2">
+                                <BarChart2 size={20} />
+                                <h3 className="font-bold text-lg">Configure Cohort Analysis</h3>
                             </div>
-                        </>
-                    ) : (
-                        <div className="space-y-4 animate-fadeIn">
-                             <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-4">
-                                <h4 className="text-xs font-bold text-indigo-500 uppercase tracking-wider mb-2">Proposed Tile Configuration</h4>
-                                <div className="space-y-2">
-                                    <div className="flex justify-between">
-                                        <span className="text-sm text-gray-600">Report Title:</span>
-                                        <span className="text-sm font-bold text-gray-900">{pendingReport?.title}</span>
+                            <button onClick={() => setShowStaarModal(false)} className="hover:bg-vt-darkBlue p-1 rounded-full transition">
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-6">
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-1">Target Cohort (Current Grade)</label>
+                                    <select
+                                        value={selectedStaarGrade}
+                                        onChange={(e) => setSelectedStaarGrade(e.target.value)}
+                                        className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-vt-blue focus:border-vt-blue block p-2.5"
+                                    >
+                                        <option value="5th Grade">5th Grade (Class of 2032)</option>
+                                        <option value="7th Grade">7th Grade (Class of 2030)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-1">Standard / Subject</label>
+                                    <select
+                                        value={selectedStaarSubject}
+                                        onChange={(e) => setSelectedStaarSubject(e.target.value)}
+                                        className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-vt-blue focus:border-vt-blue block p-2.5"
+                                    >
+                                        <option value="Mathematics">Mathematics</option>
+                                        <option value="Reading Language Arts">Reading Language Arts</option>
+                                        <option value="Science">Science (5th/8th Only)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs text-blue-800">
+                                <p className="font-bold mb-1">Analysis Scope:</p>
+                                <p>This report will visualize longitudinal proficiency percentages comparing State (STAAR), District (NWEA), and Local (Classroom) assessment data over the last 3 years.</p>
+                            </div>
+
+                            <button
+                                onClick={handleStaarGenerate}
+                                className="w-full text-white bg-gradient-to-r from-vt-blue to-vt-lightBlue hover:from-vt-lightBlue hover:to-orange-600 font-bold rounded-lg text-sm px-5 py-3 text-center shadow-md transition-all flex justify-center items-center gap-2"
+                            >
+                                <Sparkles size={16} /> Generate Report with EDU AI
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Configure Report Modal (Generic) */}
+            {isConfigModalOpen && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-fadeIn">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col">
+                        <div className="bg-vt-darkBlue p-4 flex justify-between items-center text-white">
+                            <div className="flex items-center gap-2">
+                                <Settings size={20} />
+                                <h3 className="font-bold text-lg">
+                                    {verificationStep ? "Verify & Create Report" : "Configure Custom Report"}
+                                </h3>
+                            </div>
+                            <button onClick={handleCloseModal} className="hover:bg-white/20 p-1 rounded-full transition">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="p-6">
+                            {!verificationStep ? (
+                                <>
+                                    <p className="text-gray-600 text-sm mb-4">
+                                        Describe the data, filters, and visualization type you need. EDU AI will draft the configuration for you.
+                                    </p>
+                                    <textarea
+                                        value={configInput}
+                                        onChange={(e) => setConfigInput(e.target.value)}
+                                        placeholder="e.g., 'Create a bar chart showing student attendance trends broken down by high school campus for the last semester.'"
+                                        className="w-full h-32 border border-vt-borderGrey rounded-xl p-3 text-sm focus:ring-2 focus:ring-vt-lightBlue focus:border-vt-blue outline-none resize-none mb-4"
+                                    />
+                                    <div className="flex justify-end gap-3">
+                                        <button
+                                            onClick={handleCloseModal}
+                                            className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg font-medium text-sm transition"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            onClick={handleVerifyReport}
+                                            className="px-4 py-2 bg-gradient-to-r from-vt-blue to-vt-lightBlue text-white rounded-lg font-bold text-sm shadow-md flex items-center gap-2 hover:shadow-lg transition"
+                                        >
+                                            <Wand2 size={16} /> Draft Configuration
+                                        </button>
                                     </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-sm text-gray-600">Category:</span>
-                                        <span className="text-sm font-bold text-gray-900">{pendingReport?.category}</span>
+                                </>
+                            ) : (
+                                <div className="space-y-4 animate-fadeIn">
+                                    <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-4">
+                                        <h4 className="text-xs font-bold text-indigo-500 uppercase tracking-wider mb-2">Proposed Tile Configuration</h4>
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between">
+                                                <span className="text-sm text-gray-600">Report Title:</span>
+                                                <span className="text-sm font-bold text-gray-900">{pendingReport?.title}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-sm text-gray-600">Category:</span>
+                                                <span className="text-sm font-bold text-gray-900">{pendingReport?.category}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-sm text-gray-600">Data Source:</span>
+                                                <span className="text-sm font-bold text-gray-900">District Data Lake (BigQuery)</span>
+                                            </div>
+                                            <div className="pt-2 border-t border-indigo-200 mt-2">
+                                                <span className="text-xs text-gray-500 block mb-1">AI Prompt Context:</span>
+                                                <p className="text-xs text-gray-700 italic">"{pendingReport?.prompt}"</p>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-sm text-gray-600">Data Source:</span>
-                                        <span className="text-sm font-bold text-gray-900">District Data Lake (BigQuery)</span>
-                                    </div>
-                                    <div className="pt-2 border-t border-indigo-200 mt-2">
-                                        <span className="text-xs text-gray-500 block mb-1">AI Prompt Context:</span>
-                                        <p className="text-xs text-gray-700 italic">"{pendingReport?.prompt}"</p>
+                                    <p className="text-sm text-gray-600">
+                                        This will create a new tile on your dashboard. Clicking it will automatically trigger the analysis defined above.
+                                    </p>
+                                    <div className="flex justify-end gap-3 pt-2">
+                                        <button
+                                            onClick={() => setVerificationStep(false)}
+                                            className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg font-medium text-sm transition"
+                                        >
+                                            Back to Edit
+                                        </button>
+                                        <button
+                                            onClick={handleApproveReport}
+                                            className="px-4 py-2 bg-green-600 text-white rounded-lg font-bold text-sm shadow-md flex items-center gap-2 hover:bg-green-700 transition"
+                                        >
+                                            <CheckCircle2 size={16} /> Approve & Create Tile
+                                        </button>
                                     </div>
                                 </div>
-                             </div>
-                             <p className="text-sm text-gray-600">
-                                This will create a new tile on your dashboard. Clicking it will automatically trigger the analysis defined above.
-                             </p>
-                             <div className="flex justify-end gap-3 pt-2">
-                                <button 
-                                    onClick={() => setVerificationStep(false)}
-                                    className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg font-medium text-sm transition"
-                                >
-                                    Back to Edit
-                                </button>
-                                <button 
-                                    onClick={handleApproveReport}
-                                    className="px-4 py-2 bg-green-600 text-white rounded-lg font-bold text-sm shadow-md flex items-center gap-2 hover:bg-green-700 transition"
-                                >
-                                    <CheckCircle2 size={16} /> Approve & Create Tile
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </div>
-        </div>
-      )}
-
-      <div className={`transition-all duration-300 ease-in-out ${isAiOpen ? 'mr-0 md:mr-[450px]' : ''}`}>
-        {/* White Header (Matching Teacher View) */}
-        <div className="bg-white border-b border-gray-200 sticky top-16 z-40 shadow-sm">
-            <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                    <div className="bg-vt-blue p-2 rounded-lg">
-                    <LayoutGrid size={24} className="text-white" />
-                    </div>
-                    <div>
-                        <h1 className="font-bold text-2xl text-gray-900 leading-none">EdData</h1>
-                        <p className="text-sm text-gray-500 font-medium mt-1">Lone Star USD • District Dashboard</p>
-                    </div>
-                </div>
-                <div className="flex items-center gap-4">
-                    <div className="hidden md:block text-right">
-                        <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Current View</div>
-                        <div className="text-sm font-bold text-gray-700">District Administrator</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {/* Hero Section (EdData Style) */}
-        <div className="bg-gradient-to-r from-slate-800 to-slate-700 text-white py-12 px-6 relative overflow-hidden">
-                <div className="max-w-7xl mx-auto relative z-10 flex flex-col md:flex-row justify-between items-center">
-                    <div className="max-w-2xl">
-                        <div className="inline-block bg-green-500 text-white text-xs font-bold px-2 py-1 rounded mb-3 uppercase tracking-wider">Popular</div>
-                        <h1 className="text-4xl font-bold mb-4">Digital Readiness Dashboard</h1>
-                        <p className="text-slate-300 text-lg mb-6 leading-relaxed">
-                            A comprehensive view of district-wide technology adoption, LMS usage stats, and student connectivity metrics across all 45 campuses.
-                        </p>
-                        <button 
-                            onClick={() => setIsAiOpen(true)} 
-                            className="bg-vt-blue hover:bg-vt-lightBlue text-white px-6 py-3 rounded-lg font-bold transition shadow-lg flex items-center gap-2"
-                        >
-                            <Sparkles size={18} /> Launch EDU AI
-                        </button>
-                    </div>
-                    {/* Abstract Hexagon Graphic */}
-                    <div className="hidden md:block relative">
-                        <div className="grid grid-cols-3 gap-4 opacity-20">
-                            <div className="w-20 h-24 bg-white clip-hex"></div>
-                            <div className="w-20 h-24 bg-vt-blue clip-hex translate-y-12"></div>
-                            <div className="w-20 h-24 bg-white clip-hex"></div>
-                        </div>
-                    </div>
-                </div>
-        </div>
-
-        {/* Filter Bar */}
-        <div className="bg-white border-b border-gray-200 shadow-sm sticky top-[8.5rem] z-20">
-                <div className="max-w-7xl mx-auto px-6 py-3 flex gap-6 overflow-x-auto text-sm font-medium text-gray-500">
-                    <button className="text-vt-blue border-b-2 border-vt-blue pb-3 -mb-3.5">All Reports</button>
-                    <button className="hover:text-gray-800 transition pb-3">Public</button>
-                    <button className="hover:text-gray-800 transition pb-3">School</button>
-                    <button className="hover:text-gray-800 transition pb-3">Agency</button>
-                    <button className="hover:text-gray-800 transition pb-3">Operational</button>
-                    <button className="hover:text-gray-800 transition pb-3">Financial</button>
-                </div>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-6 py-8">
-            
-            {/* PORTAL VIEW - THE REPORT GRID */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    
-                    {/* Render Reports from State */}
-                    {reportTiles.map((report, index) => (
-                        <div 
-                            key={report.id}
-                            onClick={() => handleTileClick(report)} 
-                            className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition hover:-translate-y-1 cursor-pointer group relative overflow-hidden"
-                        >
-                            {report.type === 'custom' && (
-                                <div className="absolute top-0 right-0 bg-indigo-500 text-white text-[10px] px-2 py-0.5 rounded-bl-lg font-bold">New</div>
                             )}
-                            <ReportIcon type={report.type} />
-                            <div className="flex justify-between items-start mb-2">
-                                <h3 className="font-bold text-lg text-gray-900 group-hover:text-vt-blue transition">{report.title}</h3>
-                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{report.category}</span>
-                            </div>
-                            <p className="text-gray-500 text-sm leading-relaxed line-clamp-3">
-                                {report.description}
-                            </p>
-                            <div className="mt-4 flex items-center text-vt-blue text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity">
-                                View Report <ArrowRight size={12} className="ml-1" />
-                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
-                            {/* Purple Guided Highlight - Tile Interaction */}
-                            {index === 0 && showTileHint && (
+            <div className={`transition-all duration-300 ease-in-out ${isAiOpen ? 'mr-0 md:mr-[450px]' : ''}`}>
+                {/* White Header (Matching Teacher View) */}
+                <div className="bg-white border-b border-gray-200 sticky top-16 z-40 shadow-sm">
+                    <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-vt-blue p-2 rounded-lg">
+                                <LayoutGrid size={24} className="text-white" />
+                            </div>
+                            <div>
+                                <h1 className="font-bold text-2xl text-gray-900 leading-none">EdData</h1>
+                                <p className="text-sm text-gray-500 font-medium mt-1">Lone Star USD • District Dashboard</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <div className="hidden md:block text-right">
+                                <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Current View</div>
+                                <div className="text-sm font-bold text-gray-700">District Administrator</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Hero Section (EdData Style) */}
+                <div className="bg-gradient-to-r from-slate-800 to-slate-700 text-white py-12 px-6 relative overflow-hidden">
+                    <div className="max-w-7xl mx-auto relative z-10 flex flex-col md:flex-row justify-between items-center">
+                        <div className="max-w-2xl">
+                            <div className="inline-block bg-green-500 text-white text-xs font-bold px-2 py-1 rounded mb-3 uppercase tracking-wider">Popular</div>
+                            <h1 className="text-4xl font-bold mb-4">Digital Readiness Dashboard</h1>
+                            <p className="text-slate-300 text-lg mb-6 leading-relaxed">
+                                A comprehensive view of district-wide technology adoption, LMS usage stats, and student connectivity metrics across all 45 campuses.
+                            </p>
+                            <button
+                                onClick={() => setIsAiOpen(true)}
+                                className="bg-vt-blue hover:bg-vt-lightBlue text-white px-6 py-3 rounded-lg font-bold transition shadow-lg flex items-center gap-2"
+                            >
+                                <Sparkles size={18} /> Launch EDU AI
+                            </button>
+                        </div>
+                        {/* Abstract Hexagon Graphic */}
+                        <div className="hidden md:block relative">
+                            <div className="grid grid-cols-3 gap-4 opacity-20">
+                                <div className="w-20 h-24 bg-white clip-hex"></div>
+                                <div className="w-20 h-24 bg-vt-blue clip-hex translate-y-12"></div>
+                                <div className="w-20 h-24 bg-white clip-hex"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Filter Bar */}
+                <div className="bg-white border-b border-gray-200 shadow-sm sticky top-[8.5rem] z-20">
+                    <div className="max-w-7xl mx-auto px-6 py-3 flex gap-6 overflow-x-auto text-sm font-medium text-gray-500">
+                        <button className="text-vt-blue border-b-2 border-vt-blue pb-3 -mb-3.5">All Reports</button>
+                        <button className="hover:text-gray-800 transition pb-3">Public</button>
+                        <button className="hover:text-gray-800 transition pb-3">School</button>
+                        <button className="hover:text-gray-800 transition pb-3">Agency</button>
+                        <button className="hover:text-gray-800 transition pb-3">Operational</button>
+                        <button className="hover:text-gray-800 transition pb-3">Financial</button>
+                    </div>
+                </div>
+
+                <div className="max-w-7xl mx-auto px-6 py-8">
+
+                    {/* PORTAL VIEW - THE REPORT GRID */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                        {/* Render Reports from State */}
+                        {reportTiles.map((report, index) => (
+                            <div
+                                key={report.id}
+                                onClick={() => handleTileClick(report)}
+                                className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition hover:-translate-y-1 cursor-pointer group relative overflow-hidden"
+                            >
+                                {report.type === 'custom' && (
+                                    <div className="absolute top-0 right-0 bg-indigo-500 text-white text-[10px] px-2 py-0.5 rounded-bl-lg font-bold">New</div>
+                                )}
+                                <ReportIcon type={report.type} />
+                                <div className="flex justify-between items-start mb-2">
+                                    <h3 className="font-bold text-lg text-gray-900 group-hover:text-vt-blue transition">{report.title}</h3>
+                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{report.category}</span>
+                                </div>
+                                <p className="text-gray-500 text-sm leading-relaxed line-clamp-3">
+                                    {report.description}
+                                </p>
+                                <div className="mt-4 flex items-center text-vt-blue text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                                    View Report <ArrowRight size={12} className="ml-1" />
+                                </div>
+
+                                {/* Purple Guided Highlight - Tile Interaction */}
+                                {index === 0 && showTileHint && (
+                                    <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 z-20 animate-bounce pointer-events-none min-w-[200px]">
+                                        <div className="bg-purple-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-xl border-2 border-white flex items-center justify-center gap-2">
+                                            <Sparkles size={12} className="text-yellow-300 animate-pulse" />
+                                            <span>Deep Dive Analysis!</span>
+                                        </div>
+                                        <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-purple-600 mx-auto -mt-0.5"></div>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+
+                        {/* Configure Reports - Trigger Tile */}
+                        <button
+                            onClick={() => { setIsConfigModalOpen(true); setHasClickedCreate(true); setShowCreateHint(false); }}
+                            className="bg-gray-50 p-6 rounded-xl border-2 border-dashed border-gray-300 hover:border-vt-blue hover:bg-blue-50 transition flex flex-col items-center justify-center text-gray-400 hover:text-vt-blue group min-h-[250px] relative"
+                        >
+                            <div className="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                                <Plus size={24} />
+                            </div>
+                            <h3 className="font-bold text-lg">Configure Reports</h3>
+                            <p className="text-sm mt-1">Add Custom View</p>
+
+                            {/* Purple Guided Highlight - Create Report */}
+                            {showCreateHint && (
                                 <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 z-20 animate-bounce pointer-events-none min-w-[200px]">
                                     <div className="bg-purple-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-xl border-2 border-white flex items-center justify-center gap-2">
-                                        <Sparkles size={12} className="text-yellow-300 animate-pulse"/>
-                                        <span>Deep Dive Analysis!</span>
+                                        <Sparkles size={12} className="text-yellow-300 animate-pulse" />
+                                        <span>Create New AI Report!</span>
                                     </div>
                                     <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-purple-600 mx-auto -mt-0.5"></div>
                                 </div>
                             )}
-                        </div>
-                    ))}
-
-                    {/* Configure Reports - Trigger Tile */}
-                    <button 
-                        onClick={() => { setIsConfigModalOpen(true); setHasClickedCreate(true); setShowCreateHint(false); }}
-                        className="bg-gray-50 p-6 rounded-xl border-2 border-dashed border-gray-300 hover:border-vt-blue hover:bg-blue-50 transition flex flex-col items-center justify-center text-gray-400 hover:text-vt-blue group min-h-[250px] relative"
-                    >
-                        <div className="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                            <Plus size={24} />
-                        </div>
-                        <h3 className="font-bold text-lg">Configure Reports</h3>
-                        <p className="text-sm mt-1">Add Custom View</p>
-
-                        {/* Purple Guided Highlight - Create Report */}
-                        {showCreateHint && (
-                            <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 z-20 animate-bounce pointer-events-none min-w-[200px]">
-                                <div className="bg-purple-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-xl border-2 border-white flex items-center justify-center gap-2">
-                                    <Sparkles size={12} className="text-yellow-300 animate-pulse"/>
-                                    <span>Create New AI Report!</span>
-                                </div>
-                                <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-purple-600 mx-auto -mt-0.5"></div>
-                            </div>
-                        )}
-                    </button>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default AdminView;
