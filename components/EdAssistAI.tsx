@@ -56,7 +56,7 @@ const EdAssistAI: React.FC<EdAssistAIProps> = ({ contextData, isOpen, onClose, i
   const [messages, setMessages] = useState<{ role: 'user' | 'model'; text: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // State to track if component has mounted to prevent initial transition flash
   const [isMounted, setIsMounted] = useState(false);
 
@@ -72,50 +72,50 @@ const EdAssistAI: React.FC<EdAssistAIProps> = ({ contextData, isOpen, onClose, i
   useEffect(() => {
     // Only update if it's the initial state (empty or just 1 previous greeting) to avoid overwriting conversation flow
     if (messages.length <= 1) {
-        const greetingKey = (role && role in t.greetings) ? role as keyof typeof t.greetings : 'default';
-        setMessages([{ role: 'model', text: t.greetings[greetingKey] }]);
+      const greetingKey = (role && role in t.greetings) ? role as keyof typeof t.greetings : 'default';
+      setMessages([{ role: 'model', text: t.greetings[greetingKey] }]);
     }
   }, [role, language]);
 
   // Handle initial prompt trigger for demos
   useEffect(() => {
     if (isOpen && initialPrompt) {
-        const timer = setTimeout(() => {
-            handleSend(initialPrompt);
-        }, 500);
-        return () => clearTimeout(timer);
+      const timer = setTimeout(() => {
+        handleSend(initialPrompt);
+      }, 500);
+      return () => clearTimeout(timer);
     }
   }, [isOpen, initialPrompt]);
 
   const handleSend = async (msgOverride?: string) => {
     const textToSend = msgOverride || input;
     if (!textToSend.trim()) return;
-    
+
     let apiKey: string | undefined;
     try {
       // @ts-ignore
       if (typeof process !== 'undefined' && process.env) {
         // @ts-ignore
-        apiKey = process.env.API_KEY;
+        apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
       }
     } catch (e) {
       console.warn("Could not access process.env");
     }
 
     if (!apiKey) {
-      setError("API Key is missing. Please configure process.env.API_KEY.");
+      setError(`API Key is missing. Please ensure GEMINI_API_KEY is allowed in your browser permissions or configured in deployment.`);
       return;
     }
 
     if (!msgOverride) setInput('');
-    
+
     setMessages(prev => [...prev, { role: 'user', text: textToSend }]);
     setLoading(true);
     setError(null);
 
     try {
       const ai = new GoogleGenAI({ apiKey });
-      
+
       const systemInstruction = `You are EDU AI, an AI assistant for Lone Star Unified School District. 
       Your persona is a helpful virtual assistant for a ${role || 'user'}.
       You have access to real-time data.
@@ -137,7 +137,7 @@ const EdAssistAI: React.FC<EdAssistAIProps> = ({ contextData, isOpen, onClose, i
       3. Keep text responses professional and concise.`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-2.0-flash',
         contents: [
           { role: 'user', parts: [{ text: systemInstruction + "\n\nUser Query: " + textToSend }] }
         ]
@@ -157,8 +157,8 @@ const EdAssistAI: React.FC<EdAssistAIProps> = ({ contextData, isOpen, onClose, i
 
   // Helper to download table data
   const downloadTableAsCSV = (tableData: string[][]) => {
-    const csvContent = "data:text/csv;charset=utf-8," 
-        + tableData.map(e => e.join(",")).join("\n");
+    const csvContent = "data:text/csv;charset=utf-8,"
+      + tableData.map(e => e.join(",")).join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -169,87 +169,87 @@ const EdAssistAI: React.FC<EdAssistAIProps> = ({ contextData, isOpen, onClose, i
   };
 
   const downloadChartData = (data: any[]) => {
-      if (!data || data.length === 0) return;
-      const headers = Object.keys(data[0]);
-      const csvContent = "data:text/csv;charset=utf-8," 
-        + [headers.join(","), ...data.map(row => headers.map(h => row[h]).join(","))].join("\n");
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", "chart_data.csv");
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+    if (!data || data.length === 0) return;
+    const headers = Object.keys(data[0]);
+    const csvContent = "data:text/csv;charset=utf-8,"
+      + [headers.join(","), ...data.map(row => headers.map(h => row[h]).join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "chart_data.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   // Chart Renderer
   const renderChart = (jsonString: string) => {
-      try {
-          const chartConfig = JSON.parse(jsonString);
-          const { type, data, title, xAxis, yAxis } = chartConfig;
-          
-          return (
-              <div className="my-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                  <div className="flex justify-between items-center mb-4">
-                      <h4 className="font-bold text-gray-700 text-sm">{title}</h4>
-                      <button onClick={() => downloadChartData(data)} className="text-vt-blue text-xs flex items-center gap-1 hover:underline">
-                          <Download size={12} /> {t.exportData}
-                      </button>
-                  </div>
-                  <div className="h-48 w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                          {type === 'bar' ? (
-                              <BarChart data={data} margin={{top: 5, right: 20, bottom: 5, left: 0}}>
-                                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                  <XAxis dataKey="name" tick={{fontSize: 10}} />
-                                  <YAxis tick={{fontSize: 10}} />
-                                  <Tooltip contentStyle={{fontSize: '12px', borderRadius: '4px'}} cursor={{fill: '#f9fafb'}} />
-                                  <Bar dataKey="value" fill="#BF5700" radius={[4, 4, 0, 0]}>
-                                    {data.map((entry: any, index: number) => (
-                                        <Cell key={`cell-${index}`} fill={entry.fill || '#BF5700'} />
-                                    ))}
-                                  </Bar>
-                              </BarChart>
-                          ) : type === 'pie' ? (
-                              <PieChart>
-                                  <Pie data={data} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={60} fill="#BF5700" label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`}>
-                                    {data.map((entry: any, index: number) => (
-                                        <Cell key={`cell-${index}`} fill={entry.fill || '#BF5700'} />
-                                    ))}
-                                  </Pie>
-                                  <Tooltip />
-                              </PieChart>
-                          ) : (
-                              <LineChart data={data}>
-                                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                  <XAxis dataKey="name" tick={{fontSize: 10}} />
-                                  <YAxis tick={{fontSize: 10}} />
-                                  <Tooltip contentStyle={{fontSize: '12px', borderRadius: '4px'}} />
-                                  <Legend wrapperStyle={{fontSize: '10px'}} />
-                                  {/* Dynamically render lines based on data keys that are not 'name' or 'fill' */}
-                                  {data.length > 0 && Object.keys(data[0]).filter(k => k !== 'name' && k !== 'fill').length > 0 ? (
-                                      Object.keys(data[0]).filter(k => k !== 'name' && k !== 'fill').map((key, index) => (
-                                          <Line 
-                                            key={key} 
-                                            type="monotone" 
-                                            dataKey={key} 
-                                            stroke={['#BF5700', '#333F48', '#f59e0b', '#8b5cf6', '#ef4444'][index % 5]} 
-                                            strokeWidth={2} 
-                                            dot={{r: 3}} 
-                                          />
-                                      ))
-                                  ) : (
-                                      <Line type="monotone" dataKey="value" stroke="#BF5700" strokeWidth={2} dot={{r: 3}} />
-                                  )}
-                              </LineChart>
-                          )}
-                      </ResponsiveContainer>
-                  </div>
-              </div>
-          );
-      } catch (e) {
-          return <div className="text-xs text-red-500 bg-red-50 p-2 rounded">Error rendering chart.</div>;
-      }
+    try {
+      const chartConfig = JSON.parse(jsonString);
+      const { type, data, title, xAxis, yAxis } = chartConfig;
+
+      return (
+        <div className="my-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm min-w-0">
+          <div className="flex justify-between items-center mb-4">
+            <h4 className="font-bold text-gray-700 text-sm">{title}</h4>
+            <button onClick={() => downloadChartData(data)} className="text-vt-blue text-xs flex items-center gap-1 hover:underline">
+              <Download size={12} /> {t.exportData}
+            </button>
+          </div>
+          <div className="h-48 w-full min-w-0">
+            <ResponsiveContainer width="100%" height="100%">
+              {type === 'bar' ? (
+                <BarChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 10 }} />
+                  <Tooltip contentStyle={{ fontSize: '12px', borderRadius: '4px' }} cursor={{ fill: '#f9fafb' }} />
+                  <Bar dataKey="value" fill="#BF5700" radius={[4, 4, 0, 0]}>
+                    {data.map((entry: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill || '#BF5700'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              ) : type === 'pie' ? (
+                <PieChart>
+                  <Pie data={data} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={60} fill="#BF5700" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+                    {data.map((entry: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill || '#BF5700'} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              ) : (
+                <LineChart data={data}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 10 }} />
+                  <Tooltip contentStyle={{ fontSize: '12px', borderRadius: '4px' }} />
+                  <Legend wrapperStyle={{ fontSize: '10px' }} />
+                  {/* Dynamically render lines based on data keys that are not 'name' or 'fill' */}
+                  {data.length > 0 && Object.keys(data[0]).filter(k => k !== 'name' && k !== 'fill').length > 0 ? (
+                    Object.keys(data[0]).filter(k => k !== 'name' && k !== 'fill').map((key, index) => (
+                      <Line
+                        key={key}
+                        type="monotone"
+                        dataKey={key}
+                        stroke={['#BF5700', '#333F48', '#f59e0b', '#8b5cf6', '#ef4444'][index % 5]}
+                        strokeWidth={2}
+                        dot={{ r: 3 }}
+                      />
+                    ))
+                  ) : (
+                    <Line type="monotone" dataKey="value" stroke="#BF5700" strokeWidth={2} dot={{ r: 3 }} />
+                  )}
+                </LineChart>
+              )}
+            </ResponsiveContainer>
+          </div>
+        </div>
+      );
+    } catch (e) {
+      return <div className="text-xs text-red-500 bg-red-50 p-2 rounded">Error rendering chart.</div>;
+    }
   };
 
   // Simple Markdown Parser for Tables, Lists, and Bold
@@ -261,134 +261,133 @@ const EdAssistAI: React.FC<EdAssistAIProps> = ({ contextData, isOpen, onClose, i
     let match;
 
     while ((match = jsonBlockRegex.exec(text)) !== null) {
-        // Text before JSON
-        if (match.index > lastIndex) {
-            parts.push({ type: 'text', content: text.substring(lastIndex, match.index) });
-        }
-        // JSON Chart
-        parts.push({ type: 'chart', content: match[1] });
-        lastIndex = jsonBlockRegex.lastIndex;
+      // Text before JSON
+      if (match.index > lastIndex) {
+        parts.push({ type: 'text', content: text.substring(lastIndex, match.index) });
+      }
+      // JSON Chart
+      parts.push({ type: 'chart', content: match[1] });
+      lastIndex = jsonBlockRegex.lastIndex;
     }
     // Remaining text
     if (lastIndex < text.length) {
-        parts.push({ type: 'text', content: text.substring(lastIndex) });
+      parts.push({ type: 'text', content: text.substring(lastIndex) });
     }
 
     return parts.map((part, partIdx) => {
-        if (part.type === 'chart') {
-            return <React.Fragment key={partIdx}>{renderChart(part.content)}</React.Fragment>;
-        }
+      if (part.type === 'chart') {
+        return <React.Fragment key={partIdx}>{renderChart(part.content)}</React.Fragment>;
+      }
 
-        const lines = part.content.split('\n');
-        const elements: React.ReactNode[] = [];
-        
-        let inTable = false;
-        let tableRows: string[][] = [];
+      const lines = part.content.split('\n');
+      const elements: React.ReactNode[] = [];
 
-        lines.forEach((line, index) => {
-            // Detect Table Row
-            if (line.trim().startsWith('|')) {
-                if (!inTable) inTable = true;
-                // Clean row
-                const row = line.split('|').map(cell => cell.trim()).filter(cell => cell !== '');
-                // Skip separator lines (e.g. |---|---|)
-                if (!row[0].match(/^-+$/)) {
-                    tableRows.push(row);
-                }
-            } else {
-                // If we were in a table and now aren't, render the table
-                if (inTable) {
-                    inTable = false;
-                    elements.push(
-                        <div key={`table-${index}`} className="my-4 bg-white rounded-lg border border-gray-200 overflow-hidden">
-                            <div className="bg-gray-50 px-3 py-2 border-b border-gray-200 flex justify-between items-center">
-                                <span className="text-xs font-bold text-gray-500 flex items-center gap-1"><TableIcon size={12}/> {t.dataTable}</span>
-                                <button 
-                                    onClick={() => downloadTableAsCSV(tableRows)}
-                                    className="text-xs text-vt-blue flex items-center gap-1 hover:underline font-medium"
-                                >
-                                    <Download size={12} /> {t.exportCSV}
-                                </button>
-                            </div>
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm text-left">
-                                    <thead className="bg-gray-50 text-gray-700">
-                                        <tr>
-                                            {tableRows[0].map((header, i) => <th key={i} className="px-4 py-2 border-b font-bold">{header}</th>)}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {tableRows.slice(1).map((row, i) => (
-                                            <tr key={i} className="border-b last:border-0 hover:bg-gray-50">
-                                                {row.map((cell, j) => <td key={j} className="px-4 py-2">{cell.replace(/\*\*/g, '')}</td>)}
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    );
-                    tableRows = [];
-                }
+      let inTable = false;
+      let tableRows: string[][] = [];
 
-                // Render Regular Text (with Bold and List support)
-                if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
-                    elements.push(
-                        <div key={index} className="ml-4 flex items-start gap-2 my-1 text-sm">
-                            <span className="mt-1.5 w-1.5 h-1.5 bg-gray-400 rounded-full flex-shrink-0"></span>
-                            <span dangerouslySetInnerHTML={{ __html: line.replace(/^[-*]\s/, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }}></span>
-                        </div>
-                    );
-                } else if (line.trim() !== '') {
-                    elements.push(
-                        <p key={index} className="mb-2 text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }}></p>
-                    );
-                }
-            }
-        });
-
-        // Edge case: Table at end of message
-        if (inTable && tableRows.length > 0) {
-             elements.push(
-                <div key={`table-end-${partIdx}`} className="my-4 bg-white rounded-lg border border-gray-200 overflow-hidden">
-                    <div className="bg-gray-50 px-3 py-2 border-b border-gray-200 flex justify-between items-center">
-                        <span className="text-xs font-bold text-gray-500 flex items-center gap-1"><TableIcon size={12}/> {t.dataTable}</span>
-                        <button 
-                            onClick={() => downloadTableAsCSV(tableRows)}
-                            className="text-xs text-vt-blue flex items-center gap-1 hover:underline font-medium"
-                        >
-                            <Download size={12} /> {t.exportCSV}
-                        </button>
-                    </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-left">
-                            <thead className="bg-gray-50 text-gray-700">
-                                <tr>
-                                    {tableRows[0].map((header, i) => <th key={i} className="px-4 py-2 border-b font-bold">{header}</th>)}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {tableRows.slice(1).map((row, i) => (
-                                    <tr key={i} className="border-b last:border-0 hover:bg-gray-50">
-                                        {row.map((cell, j) => <td key={j} className="px-4 py-2">{cell.replace(/\*\*/g, '')}</td>)}
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+      lines.forEach((line, index) => {
+        // Detect Table Row
+        if (line.trim().startsWith('|')) {
+          if (!inTable) inTable = true;
+          // Clean row
+          const row = line.split('|').map(cell => cell.trim()).filter(cell => cell !== '');
+          // Skip separator lines (e.g. |---|---|)
+          if (!row[0].match(/^-+$/)) {
+            tableRows.push(row);
+          }
+        } else {
+          // If we were in a table and now aren't, render the table
+          if (inTable) {
+            inTable = false;
+            elements.push(
+              <div key={`table-${index}`} className="my-4 bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <div className="bg-gray-50 px-3 py-2 border-b border-gray-200 flex justify-between items-center">
+                  <span className="text-xs font-bold text-gray-500 flex items-center gap-1"><TableIcon size={12} /> {t.dataTable}</span>
+                  <button
+                    onClick={() => downloadTableAsCSV(tableRows)}
+                    className="text-xs text-vt-blue flex items-center gap-1 hover:underline font-medium"
+                  >
+                    <Download size={12} /> {t.exportCSV}
+                  </button>
                 </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left">
+                    <thead className="bg-gray-50 text-gray-700">
+                      <tr>
+                        {tableRows[0].map((header, i) => <th key={i} className="px-4 py-2 border-b font-bold">{header}</th>)}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {tableRows.slice(1).map((row, i) => (
+                        <tr key={i} className="border-b last:border-0 hover:bg-gray-50">
+                          {row.map((cell, j) => <td key={j} className="px-4 py-2">{cell.replace(/\*\*/g, '')}</td>)}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             );
-        }
+            tableRows = [];
+          }
 
-        return <React.Fragment key={partIdx}>{elements}</React.Fragment>;
+          // Render Regular Text (with Bold and List support)
+          if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
+            elements.push(
+              <div key={index} className="ml-4 flex items-start gap-2 my-1 text-sm">
+                <span className="mt-1.5 w-1.5 h-1.5 bg-gray-400 rounded-full flex-shrink-0"></span>
+                <span dangerouslySetInnerHTML={{ __html: line.replace(/^[-*]\s/, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }}></span>
+              </div>
+            );
+          } else if (line.trim() !== '') {
+            elements.push(
+              <p key={index} className="mb-2 text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }}></p>
+            );
+          }
+        }
+      });
+
+      // Edge case: Table at end of message
+      if (inTable && tableRows.length > 0) {
+        elements.push(
+          <div key={`table-end-${partIdx}`} className="my-4 bg-white rounded-lg border border-gray-200 overflow-hidden">
+            <div className="bg-gray-50 px-3 py-2 border-b border-gray-200 flex justify-between items-center">
+              <span className="text-xs font-bold text-gray-500 flex items-center gap-1"><TableIcon size={12} /> {t.dataTable}</span>
+              <button
+                onClick={() => downloadTableAsCSV(tableRows)}
+                className="text-xs text-vt-blue flex items-center gap-1 hover:underline font-medium"
+              >
+                <Download size={12} /> {t.exportCSV}
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-gray-50 text-gray-700">
+                  <tr>
+                    {tableRows[0].map((header, i) => <th key={i} className="px-4 py-2 border-b font-bold">{header}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {tableRows.slice(1).map((row, i) => (
+                    <tr key={i} className="border-b last:border-0 hover:bg-gray-50">
+                      {row.map((cell, j) => <td key={j} className="px-4 py-2">{cell.replace(/\*\*/g, '')}</td>)}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      }
+
+      return <React.Fragment key={partIdx}>{elements}</React.Fragment>;
     });
   };
 
   return (
-    <div 
-      className={`fixed inset-y-0 right-0 w-full md:w-[450px] bg-white shadow-2xl z-[60] flex flex-col border-l border-gray-200 transform ${isMounted ? 'transition-transform duration-300' : ''} ${
-        isOpen ? 'translate-x-0' : 'translate-x-full pointer-events-none'
-      }`}
+    <div
+      className={`fixed inset-y-0 right-0 w-full md:w-[450px] bg-white shadow-2xl z-[60] flex flex-col border-l border-gray-200 transform ${isMounted ? 'transition-transform duration-300' : ''} ${isOpen ? 'translate-x-0' : 'translate-x-full pointer-events-none'
+        }`}
     >
       {/* Header */}
       <div className="bg-vt-blue p-4 flex justify-between items-center text-white">
@@ -409,11 +408,10 @@ const EdAssistAI: React.FC<EdAssistAIProps> = ({ contextData, isOpen, onClose, i
             className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div
-              className={`max-w-[90%] p-3 rounded-2xl shadow-sm ${
-                msg.role === 'user'
-                  ? 'bg-vt-blue text-white rounded-br-none text-sm'
-                  : 'bg-white text-gray-800 border border-gray-200 rounded-bl-none'
-              }`}
+              className={`max-w-[90%] p-3 rounded-2xl shadow-sm ${msg.role === 'user'
+                ? 'bg-vt-blue text-white rounded-br-none text-sm'
+                : 'bg-white text-gray-800 border border-gray-200 rounded-bl-none'
+                }`}
             >
               {msg.role === 'model' ? renderMessageText(msg.text) : msg.text}
             </div>
@@ -428,10 +426,10 @@ const EdAssistAI: React.FC<EdAssistAIProps> = ({ contextData, isOpen, onClose, i
           </div>
         )}
         {error && (
-            <div className="flex items-center gap-2 text-red-600 text-sm p-2 bg-red-50 rounded">
-                <AlertCircle size={16} />
-                {error}
-            </div>
+          <div className="flex items-center gap-2 text-red-600 text-sm p-2 bg-red-50 rounded">
+            <AlertCircle size={16} />
+            {error}
+          </div>
         )}
       </div>
 
@@ -449,15 +447,14 @@ const EdAssistAI: React.FC<EdAssistAIProps> = ({ contextData, isOpen, onClose, i
           <button
             onClick={() => handleSend()}
             disabled={loading}
-            className={`p-1.5 rounded-full transition ${
-              input ? 'bg-vt-blue text-white hover:bg-vt-darkBlue' : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            }`}
+            className={`p-1.5 rounded-full transition ${input ? 'bg-vt-blue text-white hover:bg-vt-darkBlue' : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
           >
             <Send size={16} />
           </button>
         </div>
         <div className="text-center mt-2">
-             <span className="text-[10px] text-gray-400">{t.poweredBy}</span>
+          <span className="text-[10px] text-gray-400">{t.poweredBy}</span>
         </div>
       </div>
     </div>
