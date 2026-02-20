@@ -87,6 +87,19 @@ const EduAI: React.FC<EduAIProps> = ({ contextData, isOpen, onClose, initialProm
     }
   }, [isOpen, initialPrompt]);
 
+  // Retry logic for API calls
+  const generateContentWithRetry = async (ai: GoogleGenAI, model: string, contents: any[], retries = 3, delay = 1000): Promise<any> => {
+    try {
+      return await ai.models.generateContent({ model, contents });
+    } catch (err: any) {
+      if (retries > 0 && err.status === 429) {
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return generateContentWithRetry(ai, model, contents, retries - 1, delay * 2);
+      }
+      throw err;
+    }
+  };
+
   const handleSend = async (msgOverride?: string) => {
     const textToSend = msgOverride || input;
     if (!textToSend.trim()) return;
@@ -133,20 +146,21 @@ const EduAI: React.FC<EduAIProps> = ({ contextData, isOpen, onClose, initialProm
       2. Use **bold** for emphasis.
       3. Keep text responses professional and concise.`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.0-flash',
-        contents: [
-          { role: 'user', parts: [{ text: systemInstruction + "\n\nUser Query: " + textToSend }] }
-        ]
-      });
+      const response = await generateContentWithRetry(ai, 'gemini-2.0-flash', [
+        { role: 'user', parts: [{ text: systemInstruction + "\n\nUser Query: " + textToSend }] }
+      ]);
 
       const text = response.text;
       if (text) {
         setMessages(prev => [...prev, { role: 'model', text }]);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setError(t.error);
+      if (err.status === 429) {
+        setError("I'm receiving too many requests right now. Please wait a moment and try again.");
+      } else {
+        setError(t.error);
+      }
     } finally {
       setLoading(false);
     }
@@ -180,20 +194,24 @@ const EduAI: React.FC<EduAIProps> = ({ contextData, isOpen, onClose, initialProm
   };
 
   // Chart Renderer
+  // Ensure chart is only rendered when visible to avoid resizing errors
   const renderChart = (jsonString: string) => {
     try {
       const chartConfig = JSON.parse(jsonString);
       const { type, data, title, xAxis, yAxis } = chartConfig;
 
+      // Only render charts if the sidebar is properly mounted
+      if (!isMounted) return null;
+
       return (
-        <div className="my-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm min-w-0">
+        <div className="my-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm min-w-0 overflow-hidden">
           <div className="flex justify-between items-center mb-4">
             <h4 className="font-bold text-gray-700 text-sm">{title}</h4>
             <button onClick={() => downloadChartData(data)} className="text-vt-blue text-xs flex items-center gap-1 hover:underline">
               <Download size={12} /> {t.exportData}
             </button>
           </div>
-          <div className="h-48 w-full min-w-0">
+          <div className="h-48 w-full min-w-0" style={{ minWidth: 200, minHeight: 150 }}>
             <ResponsiveContainer width="100%" height="100%">
               {type === 'bar' ? (
                 <BarChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
